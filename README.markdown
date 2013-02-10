@@ -3,10 +3,13 @@
 ### How to use it
 1. Compile the project by pressing CTRL + F5 in Visual Studio.
 2. Doubleclick the 'CygwinContextMenu.exe' in the build folder
-3. The context menu is now registered. Hold shift and right click in a folder and choose 'Open cygwin window here'
-4. Cygwin opens up.
+3. The context menu is now registered.
+4. Hold shift and right click in a folder and choose 'Open cygwin window here'
 
 ### Notes
+* Åben the CygwinContextMenu.exe application again to unregister it.
+* Once registered, you no longer need to keep CygwinContextMenu.exe around.
+
 Cygwin manual tells us we can use the 'chere' application to register the a context menu in explorer.
 See http://code.google.com/p/mintty/wiki/Tips#Starting_mintty_from_a_batch_file
 
