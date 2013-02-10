@@ -1,6 +1,12 @@
 # Cygwin Context Menu - Shift right click in a folder to open cygwin.
 
 ### How to use it
+1. Download the application: https://github.com/Genbox/CygwinContextMenu/raw/master/Compiled/CygwinContextMenu.exe
+2. Open it.
+3. The context menu is now registered.
+4. Hold shift and right click in a folder and choose 'Open cygwin window here'
+
+### I want to compile it myself
 1. Compile the project by pressing CTRL + F5 in Visual Studio.
 2. Doubleclick the 'CygwinContextMenu.exe' in the build folder
 3. The context menu is now registered.
