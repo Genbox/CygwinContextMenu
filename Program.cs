@@ -15,7 +15,7 @@ namespace CygwinContextMenu
         const string KeyName = "opencygwin";
 
         // context menu text
-        const string MenuText = "Open cygwin window Here";
+        const string MenuText = "Open cygwin window here";
 
         [STAThread]
         static void Main(string[] args)
@@ -38,28 +38,40 @@ namespace CygwinContextMenu
                     {
                         //Find the location of cygwin.
                         string cygwinPath = @"C:\cygwin";
+                        string cygwinPath64 = @"C:\cygwin64";
 
                         using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
                         {
                             using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
                             {
                                 if (subKey != null)
-                                {
                                     cygwinPath = subKey.GetValue("rootdir").ToString();
-                                }
+                            }
+                        }
+
+                        using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                        {
+                            using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
+                            {
+                                if (subKey != null)
+                                    cygwinPath64 = subKey.GetValue("rootdir").ToString();
                             }
                         }
 
                         string cygwinTTY = Path.Combine(cygwinPath, @"bin\mintty.exe");
+                        string cygwinTTY64 = Path.Combine(cygwinPath64, @"bin\mintty.exe");
 
-                        if (!File.Exists(cygwinTTY))
+                        bool cygwinTTYExists = File.Exists(cygwinTTY);
+                        bool cygwinTTY64Exists = File.Exists(cygwinTTY64);
+
+                        if (!cygwinTTYExists && !cygwinTTY64Exists)
                         {
-                            MessageBox.Show("Cygwin is not installed. Please Install Cygwin.", "Cygwin not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Cygwin is not installed. Please install Cygwin.", "Cygwin not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
 
                         //see http://code.google.com/p/mintty/wiki/Tips#Starting_mintty_from_a_batch_file
-                        string menuCommand = "\"" + cygwinTTY + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l";
+                        string menuCommand = cygwinTTY64Exists ? "\"" + cygwinTTY64 + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l" : "\"" + cygwinTTY + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l";
 
                         // register the context menu
                         FileShellExtension.Register(FileType, KeyName, MenuText, menuCommand, true);
