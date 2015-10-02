@@ -11,11 +11,13 @@ namespace CygwinContextMenu
     /// </summary>
     public static class FileShellExtension
     {
-        public static bool IsRegistered(string fileType, string shellKeyName)
+        public static bool IsRegistered(string fileType, string shellKeyName, bool userOnly)
         {
-            string regPath = string.Format(@"{0}\shell\{1}", fileType, shellKeyName);
+            string regPath = string.Format(@"Software\Classes\{0}\shell\{1}", fileType, shellKeyName);
 
-            using (RegistryKey key = Registry.ClassesRoot.OpenSubKey(regPath))
+            RegistryKey hive = userOnly ? Registry.CurrentUser : Registry.LocalMachine;
+
+            using (RegistryKey key = hive.OpenSubKey(regPath))
             {
                 return key != null;
             }
@@ -29,15 +31,17 @@ namespace CygwinContextMenu
         /// <param name="menuText">Text that appears in the context menu.</param>
         /// <param name="menuCommand">Command line that is executed.</param>
         /// <param name="makeExtended">True means it will only show when CTRL key is down.</param>
-        public static void Register(string fileType, string shellKeyName, string menuText, string menuCommand, bool makeExtended = false)
+        public static void Register(string fileType, string shellKeyName, string menuText, string menuCommand, bool userOnly, bool makeExtended = false)
         {
             Debug.Assert(!string.IsNullOrEmpty(fileType) && !string.IsNullOrEmpty(shellKeyName) && !string.IsNullOrEmpty(menuText) && !string.IsNullOrEmpty(menuCommand));
 
             // create full path to registry location
-            string regPath = string.Format(@"{0}\shell\{1}", fileType, shellKeyName);
+            string regPath = string.Format(@"Software\Classes\{0}\shell\{1}", fileType, shellKeyName);
+
+            RegistryKey hive = userOnly ? Registry.CurrentUser : Registry.LocalMachine;
 
             // add context menu to the registry
-            using (RegistryKey key = Registry.ClassesRoot.CreateSubKey(regPath))
+            using (RegistryKey key = hive.CreateSubKey(regPath))
             {
                 if (key != null) key.SetValue(null, menuText);
 
@@ -59,16 +63,18 @@ namespace CygwinContextMenu
         /// </summary>
         /// <param name="fileType">The file type to unregister.</param>
         /// <param name="shellKeyName">Name that was registered in the registry.</param>
-        public static void Unregister(string fileType, string shellKeyName)
+        public static void Unregister(string fileType, string shellKeyName, bool userOnly)
         {
             Debug.Assert(!string.IsNullOrEmpty(fileType) &&
                 !string.IsNullOrEmpty(shellKeyName));
 
             // full path to the registry location			
-            string regPath = string.Format(@"{0}\shell\{1}", fileType, shellKeyName);
+            string regPath = string.Format(@"Software\Classes\{0}\shell\{1}", fileType, shellKeyName);
+
+            RegistryKey hive = userOnly ? Registry.CurrentUser : Registry.LocalMachine;
 
             // remove context menu from the registry
-            Registry.ClassesRoot.DeleteSubKeyTree(regPath, false);
+            hive.DeleteSubKeyTree(regPath, false);
         }
     }
 }

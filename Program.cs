@@ -20,64 +20,60 @@ namespace CygwinContextMenu
         [STAThread]
         static void Main(string[] args)
         {
+            DialogResult result = MessageBox.Show("You want the installer to run for all users?", "", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            bool allUsers = result == DialogResult.Yes;
+
             try
             {
-                // process register or unregister commands
-                if (args.Length == 0)
+                bool isRegistered = FileShellExtension.IsRegistered(FileType, KeyName, !allUsers);
+
+                if (isRegistered)
                 {
-                    bool isRegistered = FileShellExtension.IsRegistered(FileType, KeyName);
+                    // unregister the context menu
+                    FileShellExtension.Unregister(FileType, KeyName, !allUsers);
 
-                    if (isRegistered)
+                    MessageBox.Show(string.Format("The '{0}' shell extension was unregistered.", MenuText), MenuText, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    //Find the location of cygwin.
+                    string cygwinPath = @"C:\cygwin";
+                    string cygwinPath64 = @"C:\cygwin64";
+
+                    using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
                     {
-                        // unregister the context menu
-                        FileShellExtension.Unregister(FileType, KeyName);
-
-                        MessageBox.Show(string.Format("The '{0}' shell extension was unregistered.", MenuText), MenuText, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
+                        {
+                            if (subKey != null)
+                                cygwinPath = subKey.GetValue("rootdir").ToString();
+                        }
                     }
-                    else
+
+                    using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
                     {
-                        //Find the location of cygwin.
-                        string cygwinPath = @"C:\cygwin";
-                        string cygwinPath64 = @"C:\cygwin64";
-
-                        using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
+                        using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
                         {
-                            using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
-                            {
-                                if (subKey != null)
-                                    cygwinPath = subKey.GetValue("rootdir").ToString();
-                            }
+                            if (subKey != null)
+                                cygwinPath64 = subKey.GetValue("rootdir").ToString();
                         }
-
-                        using (RegistryKey baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                        {
-                            using (RegistryKey subKey = baseKey.OpenSubKey(@"SOFTWARE\Cygwin\setup\"))
-                            {
-                                if (subKey != null)
-                                    cygwinPath64 = subKey.GetValue("rootdir").ToString();
-                            }
-                        }
-
-                        string cygwinTTY = Path.Combine(cygwinPath, @"bin\mintty.exe");
-                        string cygwinTTY64 = Path.Combine(cygwinPath64, @"bin\mintty.exe");
-
-                        bool cygwinTTYExists = File.Exists(cygwinTTY);
-                        bool cygwinTTY64Exists = File.Exists(cygwinTTY64);
-
-                        if (!cygwinTTYExists && !cygwinTTY64Exists)
-                        {
-                            MessageBox.Show("Cygwin is not installed. Please install Cygwin.", "Cygwin not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        //see http://code.google.com/p/mintty/wiki/Tips#Starting_mintty_from_a_batch_file
-                        string menuCommand = cygwinTTY64Exists ? "\"" + cygwinTTY64 + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l" : "\"" + cygwinTTY + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l";
-
-                        // register the context menu
-                        FileShellExtension.Register(FileType, KeyName, MenuText, menuCommand, true);
-
-                        MessageBox.Show(string.Format("The '{0}' shell extension was registered.", MenuText), MenuText, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
+
+                    string cygwinTTY = Path.Combine(cygwinPath, @"bin\mintty.exe");
+                    string cygwinTTY64 = Path.Combine(cygwinPath64, @"bin\mintty.exe");
+
+                    if (!File.Exists(cygwinTTY) && !File.Exists(cygwinTTY64))
+                    {
+                        MessageBox.Show("Cygwin is not installed. Please install Cygwin.", "Cygwin not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    //see http://code.google.com/p/mintty/wiki/Tips#Starting_mintty_from_a_batch_file
+                    string menuCommand = File.Exists(cygwinTTY64) ? "\"" + cygwinTTY64 + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l" : "\"" + cygwinTTY + "\" /bin/env CHERE_INVOKING=1 /bin/bash -l";
+
+                    // register the context menu
+                    FileShellExtension.Register(FileType, KeyName, MenuText, menuCommand, !allUsers);
+
+                    MessageBox.Show(string.Format("The '{0}' shell extension was registered for " + (allUsers ? "all users." : "only you."), MenuText), MenuText, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
