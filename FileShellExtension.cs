@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using Microsoft.Win32;
 
@@ -43,7 +44,10 @@ namespace CygwinContextMenu
             // add context menu to the registry
             using (RegistryKey key = hive.CreateSubKey(regPath))
             {
-                if (key != null) key.SetValue(null, menuText);
+                if (key != null)
+                    key.SetValue(null, menuText);
+                else
+                    throw new Exception("Failed to create " + regPath);
 
                 if (makeExtended)
                 {
@@ -52,9 +56,12 @@ namespace CygwinContextMenu
             }
 
             // add command that is invoked to the registry
-            using (RegistryKey key = Registry.ClassesRoot.CreateSubKey(string.Format(@"{0}\command", regPath)))
+            using (RegistryKey key = hive.CreateSubKey(string.Format(@"{0}\command", regPath)))
             {
-                if (key != null) key.SetValue(null, menuCommand);
+                if (key != null)
+                    key.SetValue(null, menuCommand);
+                else
+                    throw new Exception("Failed to create " + menuCommand);
             }
         }
 
